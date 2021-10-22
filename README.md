@@ -6,3 +6,6 @@ This is a python table of data implementation with styles, colors
 # Table adapts to the lack of data
 ![Second example](examples/example1.png)
 ![Second result](examples/result1.png)
+# Lambda color features
+![Second example](examples/example2.png)
+![Second result](examples/result2.png)
