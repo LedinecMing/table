@@ -92,26 +92,34 @@ class Table:
         max_key_len: int = max(len(str(key)) for key in self.table_info.keys())
         return (self.table_style.table_indents[0] + max_key_len + len(self.get_barrier(VERTICAL))) * (len(list(self.table_info.values())[1]) + 1) + self.table_style.table_indents[0]
 
+    def get_data_len(self, column_num: int) -> int:
+        if column_num >= len(self.table_info.keys()):
+            column_num = len(self.table_info.keys()) - 1
+        return len(list(self.table_info.values())[column_num])
+
     def get_text_table(self) -> None:
         max_len: int = max([len(str(i)) for j in self.table_info.values() for i in j])
         max_key_len: int = max(len(str(key)) for key in self.table_info.keys())
 
         raw_len: int = max_key_len + self.table_style.table_indents[0]
-        seq_len: int = len(list(self.table_info.values())[0])
         vertical_barriers: str = self.get_barrier(VERTICAL)
         corner: str = self.table_style.corner_symbol * self.table_style.barrier_size[0]
 
-        empty_vertical_line: str = vertical_barriers + vertical_barriers.join([" " * raw_len for i in range(seq_len + 1)]) + vertical_barriers
-        empty_horizontal_line: str = corner + corner.join([self.table_style.horizontal_symbol * raw_len for i in range(seq_len + 1)]) + corner
+        empty_vertical_line: typing.Callable[[int], str] = lambda seq_len: vertical_barriers + vertical_barriers.join([" " * raw_len for i in range(seq_len + 1)]) + vertical_barriers
+        empty_horizontal_line: typing.Callable[[int], str] = lambda seq_len: corner + corner.join([self.table_style.horizontal_symbol * raw_len for i in range(seq_len + 1)]) + corner
 
-        print(empty_horizontal_line)
+        print(empty_horizontal_line(self.get_data_len(0)))
         for key, seq in self.table_info.items():
-            print(empty_vertical_line)
+            print(empty_vertical_line(len(seq)))
             print(vertical_barriers + self.get_normal_idents(key, max_key_len, VERTICAL), end=vertical_barriers)
             for item in seq:
                 print(self.table_style.color_data(item) + self.get_normal_idents(item, max_len, VERTICAL), end=self.get_barrier(VERTICAL))
-            print("\n" + empty_vertical_line)
-            print(empty_horizontal_line)
+            print("\n" + empty_vertical_line(len(seq)))
+            next_seq_len: int = self.get_data_len(list(self.table_info.keys()).index(key) + 1)
+            if next_seq_len > len(seq):
+                print(empty_horizontal_line(next_seq_len))
+            else:
+                print(empty_horizontal_line(len(seq)))
 
 
 classic_style: TableStyle = TableStyle(table_indents=(2, 2),
@@ -122,6 +130,6 @@ classic_style: TableStyle = TableStyle(table_indents=(2, 2),
                                        types_color={int: lambda n: colorama.Fore.RED,
                                                     str: lambda n: colorama.Fore.LIGHTGREEN_EX}
                                        )
-my_table: Table = Table({"Age": [1000, 50, 23, 43, 18], "Gender": ["Male", "Female", "Female", "Male", "Female"]},
+my_table: Table = Table({"Age": [1000, 50, 23, 43, 18], "Gender": ["Male", "Female", "Female", "Male", "Female", "Male"], "Weight": [90, 70, 60, 108, 73]},
                         classic_style)
 my_table.get_text_table()
