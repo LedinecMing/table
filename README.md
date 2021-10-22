@@ -9,3 +9,6 @@ This is a python table of data implementation with styles, colors
 # Lambda color features
 ![Second example](examples/example2.png)
 ![Second result](examples/result2.png)
+# Full power of lambda
+![Second example](examples/example3.png)
+![Second result](examples/result3.png)
