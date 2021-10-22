@@ -20,9 +20,11 @@ class TableStyle:
                  corner_symbol: str = "+",
                  horizontal_color: typing.Callable[[int], str] = CLASSIC_COLOR_LAMBDA, vertical_color: typing.Callable[[int], str] = CLASSIC_COLOR_LAMBDA,
                  corner_color: typing.Callable[[int], str] = CLASSIC_COLOR_LAMBDA,
+                 types_color: typing.Dict[type, typing.Callable[[int], str]] = {},
                  barrier_size: typing.Tuple[int, int] = (2, 2),
                  table_indents: typing.Tuple[int, int] = (1, 1),
                  split_char: str = ".") -> None:
+        self.types_color: typing.Dict[type, typing.Callable[[int], str]] = types_color
         self.corner_color: typing.Callable[[int], str] = corner_color
         self.horizontal_color: typing.Callable[[int], str] = horizontal_color
         self.vertical_color: typing.Callable[[int], str] = vertical_color
@@ -36,16 +38,23 @@ class TableStyle:
         self.table_indents: typing.Tuple[int, int] = table_indents
 
     @property
-    def horizontal_symbol(self):
+    def horizontal_symbol(self) -> str:
         return self.horizontal_color(0) + self._horizontal_symbol + colorama.Style.RESET_ALL
 
     @property
-    def vertical_symbol(self):
+    def vertical_symbol(self) -> str:
         return self.vertical_color(0) + self._vertical_symbol + colorama.Style.RESET_ALL
 
     @property
-    def corner_symbol(self):
+    def corner_symbol(self) -> str:
         return self.corner_color(0) + self._corner_symbol + colorama.Style.RESET_ALL
+
+    def color_data(self, data: typing.Hashable) -> str:
+        color: typing.Callable[[int], str] = lambda n: colorama.Fore.WHITE
+        for k, v in self.types_color.items():
+            if isinstance(data, k):
+                color = v
+        return color(0)
 
 
 class Table:
@@ -61,14 +70,15 @@ class Table:
         else:
             return self.table_info[items]
 
-    def convert_value(self, value: typing.Any) -> str:
+    @staticmethod
+    def convert_value(split_char: str, value: typing.Any) -> str:
         if isinstance(value, int):
-            return int_split(value, self.table_style.split_char)
+            return int_split(value, split_char)
         else:
             return str(value)
 
     def get_normal_idents(self, value: typing.Hashable, idents: int, rotation: int) -> str:
-        value = self.convert_value(value)
+        value = self.convert_value(self.table_style.split_char, value)
         idents = idents - len(value) + self.table_style.table_indents[rotation]
         return " "*ceil(idents/2) + value + " "*(idents//2)
 
@@ -99,7 +109,7 @@ class Table:
             print(empty_vertical_line)
             print(vertical_barriers + self.get_normal_idents(key, max_key_len, VERTICAL), end=vertical_barriers)
             for item in seq:
-                print(self.get_normal_idents(item, max_len, VERTICAL), end=self.get_barrier(VERTICAL))
+                print(self.table_style.color_data(item) + self.get_normal_idents(item, max_len, VERTICAL), end=self.get_barrier(VERTICAL))
             print("\n" + empty_vertical_line)
             print(empty_horizontal_line)
 
@@ -108,9 +118,10 @@ classic_style: TableStyle = TableStyle(table_indents=(2, 2),
                                        horizontal_symbol="=", barrier_size=(2, 2),
                                        horizontal_color=lambda n: colorama.Fore.CYAN,
                                        corner_color=lambda n: colorama.Fore.BLUE,
-                                       vertical_color=lambda n: colorama.Fore.GREEN
+                                       vertical_color=lambda n: colorama.Fore.GREEN,
+                                       types_color={int: lambda n: colorama.Fore.RED,
+                                                    str: lambda n: colorama.Fore.LIGHTGREEN_EX}
                                        )
 my_table: Table = Table({"Age": [1000, 50, 23, 43, 18], "Gender": ["Male", "Female", "Female", "Male", "Female"]},
                         classic_style)
 my_table.get_text_table()
-print(my_table[0:])
