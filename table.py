@@ -144,8 +144,3 @@ classic_style: TableStyle = TableStyle(table_indents=(2, 2),
                                        types_color={int: lambda n: colorama.Fore.RED,
                                                     str: lambda n: colorama.Fore.LIGHTGREEN_EX}
                                        )
-my_table: Table = Table(
-    {"Age": [1000, 50, 23, 43, 18], "Gender": ["Male", "Female", "Female", "Male", "Female", "Male"],
-     "Weight": [90, 70, 60, 108, 73]},
-    classic_style)
-my_table.get_text_table()
