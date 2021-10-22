@@ -102,7 +102,7 @@ class Table:
     def get_normal_idents(self, value: typing.Hashable, idents: int, rotation: int) -> str:
         self.table_style.item_requests[type(value)] += 1
         value = self.convert_value(self.table_style.split_char, value)
-        idents = idents - len(value) + self.table_style.table_indents[rotation]
+        idents = idents - len(value) + self.table_style.table_indents[0]
         return " " * ceil(idents / 2) + value + " " * (idents // 2)
 
     def get_barrier(self, rotation: int) -> str:
@@ -124,7 +124,7 @@ class Table:
     def get_text_table(self) -> None:
         max_len: int = max([len(str(i)) for j in self.table_info.values() for i in j])
 
-        raw_len: int = max_len + self.table_style.table_indents[1]
+        raw_len: int = max_len + self.table_style.table_indents[0]
         vertical_barriers: typing.Callable[[], str] = lambda: self.get_barrier(VERTICAL)
         corner: typing.Callable[[], str] = lambda: self.table_style.corner_symbol * self.table_style.barrier_size[1]
 
@@ -136,17 +136,16 @@ class Table:
 
         print(empty_horizontal_line(self.get_data_len(0)))
         for key, seq in self.table_info.items():
-            print(empty_vertical_line(len(seq)))
+            print("\n".join([empty_vertical_line(len(seq)) for i in range(ceil(self.table_style.table_indents[1]/2))]))
             self.table_style.key_request += 1
             print(vertical_barriers() + self.table_style.column_color(self.table_style.key_request) + self.get_normal_idents(key, max_len, VERTICAL), end=vertical_barriers())
             for item in seq:
                 print(self.table_style.color_data(item) + self.get_normal_idents(item, max_len, VERTICAL),
                       end=self.get_barrier(VERTICAL))
-            print("\n" + empty_vertical_line(len(seq)))
+            print("\n" + "\n".join([empty_vertical_line(len(seq)) for i in range(self.table_style.table_indents[1]//2)]))
             next_seq_len: int = self.get_data_len(list(self.table_info.keys()).index(key) + 1)
             if next_seq_len > len(seq):
                 print("\n".join([empty_horizontal_line(next_seq_len) for i in range(self.table_style.barrier_size[0])]))
             else:
                 print("\n".join([empty_horizontal_line(len(seq)) for i in range(self.table_style.barrier_size[0])]))
         self.table_style.clear_requests()
-
