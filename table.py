@@ -18,12 +18,16 @@ class TableStyle:
     def __init__(self,
                  horizontal_symbol: str = "-", vertical_symbol: str = "|",
                  corner_symbol: str = "+",
-                 horizontal_color: typing.Callable[[int], str] = CLASSIC_COLOR_LAMBDA, vertical_color: typing.Callable[[int], str] = CLASSIC_COLOR_LAMBDA,
+                 horizontal_color: typing.Callable[[int], str] = CLASSIC_COLOR_LAMBDA,
+                 vertical_color: typing.Callable[[int], str] = CLASSIC_COLOR_LAMBDA,
                  corner_color: typing.Callable[[int], str] = CLASSIC_COLOR_LAMBDA,
-                 types_color: typing.Dict[type, typing.Callable[[int], str]] = {},
+                 types_color: typing.Dict[type, typing.Callable[[int], str]] = {str: lambda n: colorama.Fore.GREEN},
                  barrier_size: typing.Tuple[int, int] = (2, 2),
                  table_indents: typing.Tuple[int, int] = (1, 1),
                  split_char: str = ".") -> None:
+
+        self.symbol_request_count: typing.Dict[str, int] = {"corner": 0, "horizontal": 0, "vertical": 0}
+
         self.types_color: typing.Dict[type, typing.Callable[[int], str]] = types_color
         self.corner_color: typing.Callable[[int], str] = corner_color
         self.horizontal_color: typing.Callable[[int], str] = horizontal_color
@@ -39,15 +43,20 @@ class TableStyle:
 
     @property
     def horizontal_symbol(self) -> str:
-        return self.horizontal_color(0) + self._horizontal_symbol + colorama.Style.RESET_ALL
+        self.symbol_request_count["horizontal"] += 1
+        return self.horizontal_color(
+            self.symbol_request_count["horizontal"]) + self._horizontal_symbol + colorama.Style.RESET_ALL
 
     @property
     def vertical_symbol(self) -> str:
-        return self.vertical_color(0) + self._vertical_symbol + colorama.Style.RESET_ALL
+        self.symbol_request_count["vertical"] += 1
+        return self.vertical_color(
+            self.symbol_request_count["vertical"]) + self._vertical_symbol + colorama.Style.RESET_ALL
 
     @property
     def corner_symbol(self) -> str:
-        return self.corner_color(0) + self._corner_symbol + colorama.Style.RESET_ALL
+        self.symbol_request_count["corner"] += 1
+        return self.corner_color(self.symbol_request_count["corner"]) + self._corner_symbol + colorama.Style.RESET_ALL
 
     def color_data(self, data: typing.Hashable) -> str:
         color: typing.Callable[[int], str] = lambda n: colorama.Fore.WHITE
@@ -80,7 +89,7 @@ class Table:
     def get_normal_idents(self, value: typing.Hashable, idents: int, rotation: int) -> str:
         value = self.convert_value(self.table_style.split_char, value)
         idents = idents - len(value) + self.table_style.table_indents[rotation]
-        return " "*ceil(idents/2) + value + " "*(idents//2)
+        return " " * ceil(idents / 2) + value + " " * (idents // 2)
 
     def get_barrier(self, rotation: int) -> str:
         if rotation:
@@ -90,7 +99,8 @@ class Table:
 
     def get_max_raw_len(self) -> int:
         max_key_len: int = max(len(str(key)) for key in self.table_info.keys())
-        return (self.table_style.table_indents[0] + max_key_len + len(self.get_barrier(VERTICAL))) * (len(list(self.table_info.values())[1]) + 1) + self.table_style.table_indents[0]
+        return (self.table_style.table_indents[0] + max_key_len + len(self.get_barrier(VERTICAL))) * (
+                    len(list(self.table_info.values())[1]) + 1) + self.table_style.table_indents[0]
 
     def get_data_len(self, column_num: int) -> int:
         if column_num >= len(self.table_info.keys()):
@@ -102,34 +112,40 @@ class Table:
         max_key_len: int = max(len(str(key)) for key in self.table_info.keys())
 
         raw_len: int = max_key_len + self.table_style.table_indents[0]
-        vertical_barriers: str = self.get_barrier(VERTICAL)
-        corner: str = self.table_style.corner_symbol * self.table_style.barrier_size[0]
+        vertical_barriers: typing.Callable[[], str] = lambda: self.get_barrier(VERTICAL)
+        corner: typing.Callable[[], str] = lambda: self.table_style.corner_symbol * self.table_style.barrier_size[1]
 
-        empty_vertical_line: typing.Callable[[int], str] = lambda seq_len: vertical_barriers + vertical_barriers.join([" " * raw_len for i in range(seq_len + 1)]) + vertical_barriers
-        empty_horizontal_line: typing.Callable[[int], str] = lambda seq_len: corner + corner.join([self.table_style.horizontal_symbol * raw_len for i in range(seq_len + 1)]) + corner
+        empty_vertical_line: typing.Callable[[int], str] = lambda seq_len: vertical_barriers() + vertical_barriers().join(
+            [" " * raw_len for i in range(seq_len + 1)]) + vertical_barriers()
+        empty_horizontal_line: typing.Callable[[int], str] = lambda seq_len: corner() + corner().join(
+            [self.table_style.horizontal_symbol * raw_len for i in range(seq_len + 1)]) + corner()
 
         print(empty_horizontal_line(self.get_data_len(0)))
         for key, seq in self.table_info.items():
             print(empty_vertical_line(len(seq)))
-            print(vertical_barriers + self.get_normal_idents(key, max_key_len, VERTICAL), end=vertical_barriers)
+            print(vertical_barriers() + self.get_normal_idents(key, max_key_len, VERTICAL), end=vertical_barriers())
             for item in seq:
-                print(self.table_style.color_data(item) + self.get_normal_idents(item, max_len, VERTICAL), end=self.get_barrier(VERTICAL))
+                print(self.table_style.color_data(item) + self.get_normal_idents(item, max_len, VERTICAL),
+                      end=self.get_barrier(VERTICAL))
             print("\n" + empty_vertical_line(len(seq)))
             next_seq_len: int = self.get_data_len(list(self.table_info.keys()).index(key) + 1)
             if next_seq_len > len(seq):
-                print(empty_horizontal_line(next_seq_len))
+                print("\n".join([empty_horizontal_line(next_seq_len) for i in range(self.table_style.barrier_size[0])]))
             else:
-                print(empty_horizontal_line(len(seq)))
+                print("\n".join([empty_horizontal_line(len(seq)) for i in range(self.table_style.barrier_size[0])]))
 
 
 classic_style: TableStyle = TableStyle(table_indents=(2, 2),
-                                       horizontal_symbol="=", barrier_size=(2, 2),
-                                       horizontal_color=lambda n: colorama.Fore.CYAN,
+                                       horizontal_symbol="▬", corner_symbol="●", vertical_symbol="|",
+                                       barrier_size=(1, 2),
+                                       horizontal_color=lambda n: colorama.Fore.CYAN if n % 2 else colorama.Fore.MAGENTA,
                                        corner_color=lambda n: colorama.Fore.BLUE,
-                                       vertical_color=lambda n: colorama.Fore.GREEN,
+                                       vertical_color=lambda n: colorama.Fore.CYAN if n % 3 else colorama.Fore.MAGENTA,
                                        types_color={int: lambda n: colorama.Fore.RED,
                                                     str: lambda n: colorama.Fore.LIGHTGREEN_EX}
                                        )
-my_table: Table = Table({"Age": [1000, 50, 23, 43, 18], "Gender": ["Male", "Female", "Female", "Male", "Female", "Male"], "Weight": [90, 70, 60, 108, 73]},
-                        classic_style)
+my_table: Table = Table(
+    {"Age": [1000, 50, 23, 43, 18], "Gender": ["Male", "Female", "Female", "Male", "Female", "Male"],
+     "Weight": [90, 70, 60, 108, 73]},
+    classic_style)
 my_table.get_text_table()
