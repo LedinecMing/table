@@ -4,6 +4,7 @@ This is a python table of data implementation with styles, colors
 ![First example](examples/example.png)
 ![First result](examples/result.png)
 <details><summary>Code</summary>
+
 ```python
 Table({"FILE": ["SYSTEM", "BYTES"], "IDK.EXE": ["WINDA", 4096], "SHTUKA.DESKTOP": ["LINUX", 1024]},
       TableStyle("~", "|", "#",
@@ -11,12 +12,16 @@ Table({"FILE": ["SYSTEM", "BYTES"], "IDK.EXE": ["WINDA", 4096], "SHTUKA.DESKTOP"
                  {str: lambda n: colorama.Fore.CYAN, int: lambda n: colorama.Fore.MAGENTA},
                  lambda n: colorama.Fore.LIGHTYELLOW_EX,
                  (1, 1), (1, 1),
-                 ".")).get_text_table()```
+                 ".")).get_text_table()
+```
+
 </details>
+
 # Lambda colors
 ![Second example](examples/example1.png)
 ![Second result](examples/result1.png)
 <details><summary>Code</summary>
+
 ```python
 Table({"FILE": ["SYSTEM", "BYTES"], "IDK.EXE": ["WINDA", 4096], "SHTUKA.DESKTOP": ["LINUX", 1024]},
       TableStyle("~", "|", "#",
@@ -25,4 +30,5 @@ Table({"FILE": ["SYSTEM", "BYTES"], "IDK.EXE": ["WINDA", 4096], "SHTUKA.DESKTOP"
                  lambda n: colorama.Fore.LIGHTYELLOW_EX,
                  (1, 1), (1, 1),
                  ".")).get_text_table()```
+
 </details>
